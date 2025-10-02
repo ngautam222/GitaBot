@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gita Dharma Guide</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Use Inter font -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f3e8; /* Lighter parchment background */
+        }
+        .app-container {
+            /* Now centers the single chat column */
+            max-width: 800px; 
+            margin: auto;
+            /* Use slightly more height for a single column view */
+            height: 90vh;
+        }
+        .chat-main-window {
+             /* Ensure the window takes full height of the container */
+            height: 100%;
+        }
+        .chat-container {
+            max-height: 75vh; /* Adjusted max height since panel is gone */
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+        /* Saffron/Terracotta gradient for a rich, devotional header */
+        .header-bg {
+            background: linear-gradient(90deg, #ff9933 0%, #da5c35 100%);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1); /* Subtle depth */
+        }
+        .user-message {
+            background-color: #4e342e; /* Deep Mahogany Brown */
+            color: #ffffff;
+            align-self: flex-end;
+            border-radius: 1rem 1rem 0.5rem 1rem;
+            max-width: 85%;
+        }
+        .bot-message {
+            background-color: #ffffff; /* Clean white card for bot */
+            color: #333333;
+            align-self: flex-start;
+            border-radius: 1rem 1rem 1rem 0.5rem;
+            border: 2px solid #e1c7a8; /* Lighter tan/gold border */
+            max-width: 85%;
+            font-size: 0.95rem;
+        }
+        .bot-message strong {
+            color: #da5c35; /* Use the terracotta color for strong text inside bot messages */
+            font-weight: bold; /* FIX: Explicitly ensure text is bold */
+        }
+        .attribution {
+            font-size: 0.65rem;
+            color: #7b6a57;
+            margin-top: 0.5rem;
+        }
+        .input-area {
+            background-color: #fcfcfc;
+            border-top: 1px solid #e1d6c3;
+        }
+        .send-button {
+            background-color: #ff9933; /* Saffron/Orange */
+            transition: all 0.2s ease;
+        }
+        .send-button:hover {
+            background-color: #da5c35; /* Terracotta Red-Orange */
+            box-shadow: 0 4px 8px rgba(255, 153, 51, 0.4);
+            transform: translateY(-1px);
+        }
+        .loader-dot {
+            animation: pulse 1s infinite;
+        }
+        .loader-dot:nth-child(2) { animation-delay: 0.2s; }
+        .loader-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.4; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+        .mantra-button {
+            background-color: #4CAF50; /* A green for positive action/mantra */
+            transition: all 0.2s ease;
+        }
+        .mantra-button:hover:not(:disabled) {
+            background-color: #388E3C;
+            box-shadow: 0 4px 8px rgba(76, 175, 80, 0.4);
+            transform: translateY(-1px);
+        }
+        .mantra-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .mantra-message {
+            background-color: #e6ffe6; /* Light green/mint background for mantras */
+            border-color: #4CAF50;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-4">
+
+    <!-- Overall Layout Container (Now a single centered column) -->
+    <div class="app-container w-full flex flex-col">
+
+        <!-- 1. Chat Application Container (Main Focus) -->
+        <div class="chat-main-window w-full bg-white shadow-2xl rounded-2xl flex flex-col overflow-hidden">
+
+            <!-- Header -->
+            <header class="header-bg text-white p-5 flex flex-col items-center justify-center shadow-xl">
+                <h1 class="text-2xl font-extrabold tracking-widest uppercase">VEDIC GUIDANCE</h1>
+                <span class="text-sm mt-1 italic opacity-90">Rooted in the Bhagavad Gita</span>
+            </header>
+
+            <!-- Chat Container -->
+            <div id="chat-history" class="chat-container flex-grow p-4 space-y-5">
+                <!-- Initial Bot Message -->
+                <div class="flex justify-start">
+                    <div class="bot-message p-3 shadow-lg">
+                        <p class="font-bold text-[#ff9933]">🙏 Om Namo Bhagavate Vasudevaya.</p>
+                        <p class="mt-1 text-sm">I offer condensed guidance, grounded in the teachings of the Bhagavad Gita. Ask about Dharma, Karma, horoscopes, or even for daily advice. You can also click the ✨Generate Mantra✨ button below after a query!</p>
+                    </div>
+                </div>
+                <!-- Messages will be injected here -->
+            </div>
+
+            <!-- Loading Indicator -->
+            <div id="loading-indicator" class="flex justify-start p-4 hidden">
+                <div class="bot-message p-3 max-w-[80%] flex items-center space-x-2">
+                    <span class="text-sm font-medium">Meditating</span>
+                    <div class="flex space-x-1">
+                        <span class="loader-dot w-2 h-2 bg-[#ff9933] rounded-full"></span>
+                        <span class="loader-dot w-2 h-2 bg-[#ff9933] rounded-full"></span>
+                        <span class="loader-dot w-2 h-2 bg-[#ff9933] rounded-full"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area and New Feature Button -->
+            <div class="p-4 input-area flex flex-col space-y-2">
+                <!-- Mantra Button -->
+                <button
+                    id="mantra-button"
+                    onclick="window.generateMantra()"
+                    class="mantra-button text-white p-2 rounded-xl font-bold shadow-md w-full transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled
+                >
+                    ✨ Generate Mantra (Affirmation) ✨
+                </button>
+
+                <!-- Text Input and Send Button -->
+                <div class="flex space-x-3">
+                    <input
+                        type="text"
+                        id="user-input"
+                        placeholder="Ask me about Dharma, Karma, or your Sign..."
+                        class="flex-grow p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#ff9933] focus:border-[#ff9933] transition duration-150"
+                        onkeypress="if(event.key === 'Enter') window.sendMessage()"
+                    />
+                    <button
+                        id="send-button"
+                        onclick="window.sendMessage()"
+                        class="send-button text-white p-3 rounded-xl font-bold shadow-lg transform hover:scale-[1.02] active:scale-[0.98] transition duration-150"
+                    >
+                        Send
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script type="module">
+        // --- Gemini API Configuration & Setup ---
+        const API_KEY = "__API_KEY__";
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${API_KEY}`;
+
+        // System Instruction updated to enforce specific verse quoting and practical advice
+        const CHAT_SYSTEM_PROMPT = `You are a knowledgeable and benevolent Spiritual Guide chatbot. Your primary function is to answer philosophical, ethical, and life questions based on the teachings and principles of the Bhagavad Gita.
+        RULES:
+        1. All responses must be **condensed and concise** (under 100 words), offering guidance directly.
+        2. When answering a question related to life, duty (dharma), or philosophy, you MUST quote **the actual, specific verse(s)** from the Bhagavad Gita that ground the answer. Include the **chapter and verse number** (e.g., BG 2.47) clearly in bold within the quote. Integrate these quotes seamlessly and concisely into your response.
+        3. If the user asks about horoscopes or practical timing/planning questions, you must provide concise guidance that focuses on **astrological themes** (e.g., caution, stability, communication) and reinforces the Gita's message of **prudence and right action (Dharma)**. **Do not give specific dates, times, or definite financial/life predictions.** The final decision rests on the seeker's disciplined mind, not external prediction.
+        4. Maintain a respectful, clear, and inspiring tone.
+        5. Keep answers focused and directly relevant to the user's query.
+        6. If needed, search the web for current events or factual information using the Google Search tool, but always ground your philosophical and ethical guidance in the Bhagavad Gita.`;
+        // MODIFIED PROMPT: Now explicitly requests Sanskrit and translation.
+        const MANTRA_SYSTEM_PROMPT = `You are an ancient Sage and spiritual counselor. The user will provide their last philosophical or life question. Your task is to generate a single, powerful, and concise mantra. The response MUST consist of two lines: the first line must be a simple Sanskrit phrase (written in the Latin alphabet) related to the query's theme, and the second line must be its English translation. The total output must be less than 15 words. Do not include any quotes or explanations. Just provide the two-line mantra.`;
+
+
+        // --- DOM Elements & State ---
+        const chatHistory = document.getElementById('chat-history');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const mantraButton = document.getElementById('mantra-button');
+
+        let lastUserQuery = ""; // State to store the context for the Mantra generation
+
+        // --- Utility Functions ---
+
+        /**
+         * Renders a message (user or bot) into the chat history.
+         * @param {string} text - The message content.
+         * @param {string} type - 'user' or 'bot'.
+         * @param {Array<Object>} [sources=[]] - Array of source objects for bot messages.
+         * @param {boolean} isMantra - Flag to apply special styling for the mantra feature.
+         */
+        function renderMessage(text, type, sources = [], isMantra = false) {
+            const messageWrapper = document.createElement('div');
+            messageWrapper.className = `flex ${type === 'user' ? 'justify-end' : 'justify-start'}`;
+
+            const messageBubble = document.createElement('div');
+            let bubbleClasses = `${type}-message p-3 shadow-md`;
+
+            if (isMantra) {
+                bubbleClasses = 'bot-message p-3 shadow-md mantra-message';
+            }
+            
+            messageBubble.className = bubbleClasses;
+
+            // Convert markdown style bolding (**) to HTML <strong> for consistent styling
+            const formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            messageBubble.innerHTML = `<p class="whitespace-pre-wrap">${formattedText}</p>`;
+
+            if (type === 'bot' && sources.length > 0) {
+                const sourceContainer = document.createElement('div');
+                sourceContainer.className = 'attribution';
+                sourceContainer.innerHTML = '<strong>Grounded Sources:</strong> ' + sources.map(s =>
+                    `<a href="${s.uri}" target="_blank" rel="noopener noreferrer" class="text-[#da5c35] hover:underline">${s.title}</a>`
+                ).join(' | ');
+                messageBubble.appendChild(sourceContainer);
+            }
+
+            messageWrapper.appendChild(messageBubble);
+            chatHistory.appendChild(messageWrapper);
+
+            // Scroll to the bottom of the chat
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        /**
+         * Handles the API call with exponential backoff.
+         * @param {Object} payload - The request body for the API.
+         * @param {number} maxRetries - Maximum number of retries.
+         * @param {number} delay - Initial delay in milliseconds.
+         * @returns {Promise<Object|null>} The parsed JSON response or null on failure.
+         */
+        async function fetchWithRetry(payload, maxRetries = 3, delay = 1000) {
+            for (let attempt = 0; attempt < maxRetries; attempt++) {
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.ok) {
+                        return await response.json();
+                    } else if (response.status === 429 || response.status >= 500) {
+                        // Rate limit or server error - retry
+                        await new Promise(resolve => setTimeout(resolve, delay * (2 ** attempt)));
+                    } else {
+                        // Other error (400s) - do not retry, just throw
+                        const errorBody = await response.text();
+                        console.error(`API Error ${response.status}:`, errorBody);
+                        throw new Error(`API failed with status ${response.status}`);
+                    }
+                } catch (error) {
+                    console.error("Fetch attempt failed:", error);
+                    if (attempt === maxRetries - 1) {
+                        throw new Error("Failed to get response after multiple retries.");
+                    }
+                    // Wait for the next retry
+                    await new Promise(resolve => setTimeout(resolve, delay * (2 ** attempt)));
+                }
+            }
+            return null; // Should be unreachable
+        }
+
+        /**
+         * Main function for the chat.
+         */
+        async function sendMessage() {
+            const userQuery = userInput.value.trim();
+            if (!userQuery) return;
+
+            // 1. Render User Message and Clear Input
+            renderMessage(userQuery, 'user');
+            userInput.value = '';
+            lastUserQuery = userQuery; // Store the query for the Mantra feature
+
+            // 2. Show Loading Indicator and Disable UI
+            loadingIndicator.classList.remove('hidden');
+            userInput.disabled = true;
+            sendButton.disabled = true;
+            mantraButton.disabled = true;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                tools: [{ "google_search": {} }],
+                systemInstruction: { parts: [{ text: CHAT_SYSTEM_PROMPT }] },
+            };
+
+            try {
+                const result = await fetchWithRetry(payload);
+
+                if (!result || !result.candidates || result.candidates.length === 0) {
+                    renderMessage("Forgive my inability to process that request. The path to knowledge is sometimes blocked.", 'bot');
+                    return;
+                }
+
+                const candidate = result.candidates[0];
+                const text = candidate.content?.parts?.[0]?.text || "The cosmos did not yield a clear answer. Please rephrase your query.";
+
+                let sources = [];
+                const groundingMetadata = candidate.groundingMetadata;
+
+                if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                    sources = groundingMetadata.groundingAttributions
+                        .map(attribution => ({
+                            uri: attribution.web?.uri,
+                            title: attribution.web?.title,
+                        }))
+                        .filter(source => source.uri && source.title);
+                }
+
+                // 3. Render Bot Message
+                renderMessage(text, 'bot', sources);
+
+            } catch (error) {
+                console.error("Critical error in sendMessage:", error);
+                renderMessage("A profound error occurred in the celestial connection. Please check the console for details.", 'bot');
+            } finally {
+                // 4. Hide Loading Indicator and Enable UI
+                loadingIndicator.classList.add('hidden');
+                userInput.disabled = false;
+                sendButton.disabled = false;
+                // Only enable mantra button if a query was successfully sent
+                if (lastUserQuery) mantraButton.disabled = false;
+                userInput.focus();
+            }
+        }
+
+        /**
+         * New LLM-powered function to generate a mantra based on the last query.
+         */
+        async function generateMantra() {
+            if (!lastUserQuery) {
+                renderMessage("Please ask me a question first, and then I will generate a mantra for you based on the theme of your query.", 'bot');
+                return;
+            }
+
+            // Show loading indicator
+            loadingIndicator.classList.remove('hidden');
+            mantraButton.disabled = true;
+
+            const mantraQuery = `Based on my recent question: "${lastUserQuery}", generate a powerful, concise mantra or affirmation rooted in the Bhagavad Gita's wisdom.`;
+
+            const payload = {
+                contents: [{ parts: [{ text: mantraQuery }] }],
+                systemInstruction: { parts: [{ text: MANTRA_SYSTEM_PROMPT }] },
+                // Do not use Google Search for mantra generation
+            };
+
+            try {
+                const result = await fetchWithRetry(payload);
+
+                if (!result || !result.candidates || result.candidates.length === 0) {
+                    renderMessage("The thread of contemplation was broken. I could not form a suitable mantra.", 'bot');
+                    return;
+                }
+
+                const generatedText = result.candidates[0].content?.parts?.[0]?.text || "Inner peace is the greatest strength.";
+
+                // 3. Render Mantra Message
+                const mantraTitle = `✨ Your Personalized Mantra for Reflection:`;
+                // Use a line break for the Sanskrit/English separation
+                const finalMantra = `<strong class="text-xl">${mantraTitle}</strong><br> ${generatedText.replace('\n', '<br>')}`; 
+                renderMessage(finalMantra, 'bot', [], true);
+
+            } catch (error) {
+                console.error("Critical error in generateMantra:", error);
+                renderMessage("An error occurred while seeking the mantra.", 'bot');
+            } finally {
+                // 4. Hide Loading Indicator and Enable Mantra UI
+                loadingIndicator.classList.add('hidden');
+                mantraButton.disabled = false;
+            }
+        }
+        
+        // Expose the functions globally
+        window.sendMessage = sendMessage;
+        window.generateMantra = generateMantra;
+    </script>
+</body>
+</html>
